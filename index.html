@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Técnico de Electrodomésticos - IA</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-icon">🔧</div>
+                <div>
+                    <h1>Asistente Técnico de Electrodomésticos</h1>
+                    <p class="subtitle">Diagnostica averías y encuentra soluciones paso a paso con ayuda de IA.</p>
+                </div>
+            </div>
+            <button id="btn-open-config" class="btn btn-secondary" aria-label="Configuración de la API Key">
+                ⚙️ Configuración
+            </button>
+        </header>
+
+        <!-- STATUS BAR -->
+        <div class="status-bar" id="status-bar" aria-live="polite">
+            <div class="status-indicator">
+                <span id="status-dot" class="status-dot dot-gray"></span>
+                <span id="status-text" class="status-text">Comprobando API Key...</span>
+            </div>
+            <div id="new-diagnosis-container" class="hidden">
+                <button id="btn-new-diagnosis" class="btn btn-sm btn-outline">➕ Nuevo diagnóstico</button>
+            </div>
+        </div>
+
+        <!-- ERROR & NOTICE PANEL -->
+        <div id="error-panel" class="error-panel hidden" role="alert" aria-live="assertive">
+            <div class="error-header">
+                <span class="error-icon">⚠️</span>
+                <strong id="error-title">Atención</strong>
+                <button id="btn-close-error" class="btn-icon" aria-label="Cerrar aviso">&times;</button>
+            </div>
+            <div id="error-message" class="error-body"></div>
+            <div class="error-actions">
+                <button id="btn-retry" class="btn btn-sm btn-outline hidden">🔄 Reintentar</button>
+                <button id="btn-toggle-tech-details" class="btn btn-sm btn-text hidden">Mostrar detalles técnicos</button>
+            </div>
+            <div id="tech-details-container" class="tech-details hidden">
+                <pre id="tech-details-content"></pre>
+                <button id="btn-copy-tech-details" class="btn btn-sm btn-outline">Copiar detalles técnicos</button>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <!-- DIAGNOSIS FORM SECTION -->
+            <section id="form-section" class="card">
+                <h2>1. Datos del Electrodoméstico</h2>
+                <form id="diagnosis-form" novalidate>
+                    <div class="form-grid">
+                        <!-- Appliance Type -->
+                        <div class="form-group">
+                            <label for="appliance-type">Tipo de electrodoméstico <span class="required">*</span></label>
+                            <select id="appliance-type" required aria-required="true">
+                                <option value="">Selecciona un electrodoméstico</option>
+                                <option value="Lavadora">Lavadora</option>
+                                <option value="Secadora">Secadora</option>
+                                <option value="Lavavajillas">Lavavajillas</option>
+                                <option value="Frigorífico">Frigorífico</option>
+                                <option value="Congelador">Congelador</option>
+                                <option value="Horno">Horno</option>
+                                <option value="Microondas">Microondas</option>
+                                <option value="Placa de inducción">Placa de inducción</option>
+                                <option value="Vitrocerámica">Vitrocerámica</option>
+                                <option value="Campana extractora">Campana extractora</option>
+                                <option value="Aire acondicionado">Aire acondicionado</option>
+                                <option value="Termo eléctrico">Termo eléctrico</option>
+                                <option value="Aspiradora">Aspiradora</option>
+                                <option value="Robot aspirador">Robot aspirador</option>
+                                <option value="Otro">Otro electrodoméstico</option>
+                            </select>
+                            <span class="field-error" id="err-appliance-type"></span>
+                        </div>
+
+                        <!-- Brand -->
+                        <div class="form-group">
+                            <label for="brand">Marca</label>
+                            <input type="text" id="brand" placeholder="Ej. Bosch, Siemens, Samsung, LG...">
+                            <span class="field-error" id="err-brand"></span>
+                        </div>
+
+                        <!-- Model -->
+                        <div class="form-group">
+                            <label for="model">Modelo <span class="optional">(opcional)</span></label>
+                            <input type="text" id="model" placeholder="Ej. WAN28280ES">
+                        </div>
+
+                        <!-- Error Code -->
+                        <div class="form-group">
+                            <label for="error-code">Código de error <span class="optional">(opcional)</span></label>
+                            <input type="text" id="error-code" placeholder="Ej. E18, F05, E4...">
+                        </div>
+                    </div>
+
+                    <!-- Problem Description -->
+                    <div class="form-group full-width">
+                        <label for="description">Descripción detallada del problema <span class="required">*</span></label>
+                        <textarea id="description" rows="5" required aria-required="true" maxlength="2000"
+                            placeholder="Describe qué ocurre, cuándo comenzó el problema, qué sonidos hace el aparato, qué luces aparecen, qué has probado, etc."></textarea>
+                        <div class="textarea-footer">
+                            <span class="field-error" id="err-description"></span>
+                            <span class="char-counter"><span id="char-count">0</span> / 2000</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" id="btn-submit-diagnosis" class="btn btn-primary btn-large">
+                            🔧 Diagnosticar problema
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- CHAT & RESULT SECTION -->
+            <section id="chat-section" class="card hidden">
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <h2>Diagnóstico y Consulta</h2>
+                        <span id="chat-appliance-info" class="badge"></span>
+                    </div>
+                    <button id="btn-export-chat" class="btn btn-sm btn-outline">📥 Exportar diagnóstico</button>
+                </div>
+
+                <div id="chat-messages" class="chat-messages" aria-live="polite">
+                    <!-- Dynamic Messages -->
+                </div>
+
+                <!-- LOADING INDICATOR -->
+                <div id="loading-indicator" class="loading-box hidden">
+                    <div class="spinner"></div>
+                    <span id="loading-text">Analizando el problema con IA...</span>
+                </div>
+
+                <!-- CHAT INPUT FORM -->
+                <form id="chat-form" class="chat-input-area">
+                    <textarea id="chat-input" rows="2" placeholder="Escribe una pregunta sobre la reparación o pruebas..." aria-label="Mensaje para el asistente"></textarea>
+                    <button type="submit" id="btn-send-chat" class="btn btn-primary">
+                        Enviar ↵
+                    </button>
+                </form>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <p>Asistente Técnico de Electrodomésticos impulsado por Google Gemini. Las respuestas son informativas y deben ejecutarse con precaución.</p>
+        </footer>
+    </div>
+
+    <!-- CONFIGURATION MODAL -->
+    <div id="config-modal" class="modal-backdrop hidden" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">⚙️ Configuración de API Key</h2>
+                <button id="btn-close-modal" class="btn-icon" aria-label="Cerrar modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="notice-box notice-info">
+                    <p><strong>🔒 Privacidad y Seguridad:</strong> Tu API Key se almacena únicamente de forma local en este navegador (<code>localStorage</code>). No la compartas con otras personas.</p>
+                    <p class="small-text">Nota: Las peticiones se envían directamente desde tu navegador a la API de Google Gemini. Una arquitectura 100% frontend no proporciona la misma protección contra filtraciones en el dispositivo cliente que un backend intermediario.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="api-key-input">API Key de Google Gemini</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
+                        <button type="button" id="btn-toggle-key-visibility" class="btn-icon" aria-label="Mostrar u ocultar API Key">👁️</button>
+                    </div>
+                    <span id="api-key-status-msg" class="field-info"></span>
+                </div>
+
+                <div class="api-key-help">
+                    <p>¿No tienes una API Key? Puedes crear una gratuitamente desde Google AI Studio:</p>
+                    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="external-link">
+                        🔑 Obtener API Key gratuita en Google AI Studio ↗
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-remove-key" class="btn btn-danger-outline">Eliminar API Key</button>
+                <div class="modal-footer-right">
+                    <button id="btn-cancel-config" class="btn btn-secondary">Cancelar</button>
+                    <button id="btn-save-key" class="btn btn-primary">Guardar API Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
